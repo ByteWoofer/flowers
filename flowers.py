@@ -4,9 +4,6 @@ import time
 import random
 import math
 
-
-
-
 class Game:
     def __init__(self, game_width=None, game_height=None):
         if game_width is None:
@@ -16,26 +13,34 @@ class Game:
         else:
             self.game_width = game_width
             self.game_height = game_height
-        self.gameDisplay = pygame.display.set_mode((self.game_width,self.game_height), pygame.NOFRAME)
+        
         if platform.system().startswith("Win"):
             import win32api
             import win32con
             import win32gui
+            
             self.background = (255, 0, 128)
             # Create layered window
+            self.gameDisplay = pygame.display.set_mode((self.game_width,self.game_height), pygame.NOFRAME)
             hwnd = pygame.display.get_wm_info()["window"]
             win32gui.SetWindowLong(hwnd, win32con.GWL_EXSTYLE,
                                 win32gui.GetWindowLong(hwnd, win32con.GWL_EXSTYLE) | win32con.WS_EX_LAYERED)
             # Set window transparency color
-            win32gui.SetLayeredWindowAttributes(hwnd, win32api.RGB(*fuchsia), 0, win32con.LWA_COLORKEY)
+            win32gui.SetLayeredWindowAttributes(hwnd, win32api.RGB(*self.background), 0, win32con.LWA_COLORKEY)
+            win32gui.SetWindowPos(hwnd, win32con.HWND_TOPMOST, 0,0,0,0,
+            win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)
+
         else:
+            self.gameDisplay = pygame.display.set_mode((self.game_width,self.game_height), pygame.NOFRAME)
             self.background = (255, 0, 128)
+        self.gameDisplay.fill(self.background)
+        pygame.display.update()
         self.gameTime = 33
         self.quit = False
         self.flowers = []
-        self.flowersPerSquare = 1
-        self.xSquares = 25
-        self.ySquares = 25
+        self.flowersPerSquare = 5
+        self.xSquares = 20
+        self.ySquares = 20
         self.squareGrid = [[self.flowersPerSquare]*(self.ySquares) for _ in range(self.xSquares)]
     def reset(self):
         self.squareGrid = [[self.flowersPerSquare]*(self.ySquares) for _ in range(self.xSquares)]
@@ -95,9 +100,9 @@ class Flower(object):
             self.y = 0.5 * game.game_height
             self.age = 0
             self.life_span = random.randint(1,31)
-            self.spread_distance = 20
+            self.spread_distance = 31
             self.children = random.randint(1,31)
-            self.years_to_maturity = random.randint(1,31)
+            self.years_to_maturity = 1
             self.color = ((8*self.life_span)%255, (8*self.spread_distance)%255, (8*self.children)%255)
         else:
             self.x = random.randint(-parent.spread_distance,parent.spread_distance)+parent.x
