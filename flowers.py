@@ -32,14 +32,14 @@ class Game:
 
         else:
             self.gameDisplay = pygame.display.set_mode((self.game_width,self.game_height), pygame.NOFRAME)
-            self.background = (255, 0, 128)
+            self.background = (0, 0, 0)
         self.gameDisplay.fill(self.background)
         pygame.display.update()
         self.gameTime = 33
         self.quit = False
         self.flowers = []
-        self.flowersPerSquare = 5
-        self.xSquares = 20
+        self.flowersPerSquare = 1
+        self.xSquares = 30
         self.ySquares = 20
         self.squareGrid = [[self.flowersPerSquare]*(self.ySquares) for _ in range(self.xSquares)]
     def reset(self):
@@ -103,7 +103,7 @@ class Flower(object):
             self.spread_distance = 31
             self.children = random.randint(1,31)
             self.years_to_maturity = 1
-            self.color = ((8*self.life_span)%255, (8*self.spread_distance)%255, (8*self.children)%255)
+            self.color = ((self.lifeLeft()*self.life_span)%255, (self.lifeLeft()*self.spread_distance)%255, (self.lifeLeft()*self.children)%255)
         else:
             self.x = random.randint(-parent.spread_distance,parent.spread_distance)+parent.x
             self.y = random.randint(-parent.spread_distance,parent.spread_distance)+parent.y
@@ -112,7 +112,7 @@ class Flower(object):
             self.spread_distance = parent.spread_distance+random.randint(-1,1)
             self.children = (parent.children+random.randint(-1,1))
             self.years_to_maturity = parent.years_to_maturity+random.randint(-1,1)
-            self.color = ((8*self.life_span)%255, (8*self.spread_distance)%255, (8*self.children)%255)
+            self.color = ((self.lifeLeft()*self.life_span)%255, (self.lifeLeft()*self.spread_distance)%255, (self.lifeLeft()*self.children)%255)
             if(self.isValid(game)):
                 game.addFlower(self)            
 
@@ -124,9 +124,14 @@ class Flower(object):
         self.spread_distance = parent.spread_distance+random.randint(-1,1)
         self.children = (parent.children+random.randint(-1,1))
         self.years_to_maturity = parent.years_to_maturity+random.randint(-1,1)
-        self.color = ((8*self.life_span)%255, (8*self.spread_distance)%255, (8*self.children)%255)
+        self.color = ((self.lifeLeft()*self.life_span)%255, (self.lifeLeft()*self.spread_distance)%255, (self.lifeLeft()*self.children)%255)
         if(self.isValid(game)):
            game.addFlower(self)
+
+    def lifeLeft(self):
+        if(self.life_span==0):
+            return 8
+        return (((self.age/self.life_span)*7)+1)
 
     def isValid(self, game):
         return (self.x<game.game_width and self.x>0
@@ -139,6 +144,7 @@ class Flower(object):
 
     def grow(self, game):
         self.age += 1
+        self.color = ((self.lifeLeft()*self.life_span)%255, (self.lifeLeft()*self.spread_distance)%255, (self.lifeLeft()*self.children)%255)
         if self.age % self.years_to_maturity == 0:
             self.spread(game)
         if self.age > self.life_span:
