@@ -35,7 +35,7 @@ class Game:
             self.background = (0, 0, 0)
         self.gameDisplay.fill(self.background)
         pygame.display.update()
-        self.gameTime = 33
+        self.gameTime = 15
         self.quit = False
         self.flowers = []
         self.flowersPerSquare = 1
