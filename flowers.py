@@ -1,11 +1,12 @@
 import platform
 import pygame
-import time
+import datetime
 import random
 import math
 
 class Game:
     def __init__(self, game_width=None, game_height=None, hideBorder=True):
+        self.lastReset = datetime.datetime.utcnow()
         borderConfig = 0
         if hideBorder:
             borderConfig = pygame.NOFRAME
@@ -63,6 +64,7 @@ class Game:
         self.gameDisplay.fill(self.background)
         self.FlowerResets = -1
         self.BugResets = -1
+        self.lastReset = datetime.datetime.utcnow()
 
     def addFlower(self, flower):
         x = math.floor((flower.x/self.game_width)*self.xSquares)
@@ -165,7 +167,7 @@ class Game:
 
     def showDebug(self):
         font = pygame.font.SysFont(None, 24)
-        string = 'Flowers: %d    Bugs: %d    FlowerResets: %d    BugResets: %d' %( len(self.flowers), len(self.bugs),self.FlowerResets,self.BugResets)
+        string = 'Flowers: %d    Bugs: %d    FlowerResets: %d    BugResets: %d    TimeSince: %s' %( len(self.flowers), len(self.bugs),self.FlowerResets,self.BugResets, str(datetime.datetime.utcnow() - self.lastReset).split(".")[0])
         img = font.render(string, True, (255,255,255))
         rectPos = font.size(string)
         modPos = (rectPos[0]+20,rectPos[1]+20)        
@@ -174,7 +176,7 @@ class Game:
 
     def clearDebug(self):
         font = pygame.font.SysFont(None, 24)
-        string = 'Flowers: %d    Bugs: %d    FlowerResets: %d    BugResets: %d' %( len(self.flowers), len(self.bugs),self.FlowerResets,self.BugResets)
+        string = 'Flowers: %d    Bugs: %d    FlowerResets: %d    BugResets: %d    TimeSince: %s' %( len(self.flowers), len(self.bugs),self.FlowerResets,self.BugResets, str(datetime.datetime.utcnow() - self.lastReset).split(".")[0])
         rectPos = font.size(string)
         modPos = (rectPos[0]+20,rectPos[1]+20)        
         pygame.draw.rect(self.gameDisplay, self.background, ((20,20), modPos))
@@ -365,8 +367,10 @@ def run():
                 # game.reset()
                 game.addFlower(Flower(game))
                 game.FlowerResets+=1
+                game.lastReset = datetime.datetime.utcnow()
         if(len(game.bugs)<1 and game.spawnBug):
                 game.addBug(Bug(game))
                 game.BugResets+=1
+                game.lastReset = datetime.datetime.utcnow()
 
 run()
