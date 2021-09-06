@@ -39,19 +39,30 @@ class Game:
         self.gameDisplay.fill(self.background)
         pygame.display.update()
         self.gameTime = 50
-        self.bugTicks = 1
+        self.bugTicks = 2
+        self.FlowerResets = -1
+        self.BugResets = -1
         self.quit = False
         self.flowers = []
         self.bugs = []
-        self.flowersPerSquare = 1
-        self.xSquares = 30
-        self.ySquares = 20
+        self.spawnBug = False
+        self.debug = False
+        self.debugClear = False
+        self.displayGridToggle = False
+        self.clearGridPass = False
+        self.onlyLiving = False
+        self.flowersPerSquare = 2
+        self.xSquares = 19
+        self.ySquares = 12
         self.squareGrid = [[self.flowersPerSquare]*(self.ySquares) for _ in range(self.xSquares)]
+
     def reset(self):
         self.squareGrid = [[self.flowersPerSquare]*(self.ySquares) for _ in range(self.xSquares)]
         self.flowers = []
         self.bugs = []
         self.gameDisplay.fill(self.background)
+        self.FlowerResets = -1
+        self.BugResets = -1
 
     def addFlower(self, flower):
         x = math.floor((flower.x/self.game_width)*self.xSquares)
@@ -73,12 +84,26 @@ class Game:
         for flower in self.flowers:
            pygame.draw.circle(self.gameDisplay, flower.color, (flower.x, flower.y), flower.age+1, 1)
 
+    def displayGrid(self):
+        for i in range(self.xSquares):
+            pygame.draw.line(self.gameDisplay, (255,255,255), ((self.game_width/self.xSquares)*i,0),((self.game_width/self.xSquares)*i,self.game_height),1)
+        for i in range(self.ySquares):
+            pygame.draw.line(self.gameDisplay, (255,255,255), (0,(self.game_height/self.ySquares)*i),(self.game_width,(self.game_height/self.ySquares)*i),1)
+
+    def clearGrid(self):
+        for i in range(self.xSquares):
+            pygame.draw.line(self.gameDisplay, self.background, ((self.game_width/self.xSquares)*i,0),((self.game_width/self.xSquares)*i,self.game_height),1)
+        for i in range(self.ySquares):
+            pygame.draw.line(self.gameDisplay, self.background, (0,(self.game_height/self.ySquares)*i),(self.game_width,(self.game_height/self.ySquares)*i),1)
+        self.clearGridPass = False
+
     def displayBug(self, bug):
         pygame.draw.circle(self.gameDisplay, self.background, (bug.pX, bug.pY), bug.pSize, 0)        
         bug.pX = bug.x
         bug.pY = bug.y
         bug.pSize = bug.size
         pygame.draw.circle(self.gameDisplay, bug.color, (bug.x, bug.y), bug.size, 0)
+        # pygame.draw.arc(self.gameDisplay, (255,255,255), ((bug.x),(bug.y),(bug.x+bug.size),(bug.y+bug.size)), 0, 2*math.pi, 10)
         pygame.draw.circle(self.gameDisplay, (255,255,255), (bug.x, bug.y), (bug.size/2)+int(bug.size*(.5*bug.age/bug.lifespan)), int(bug.size*(bug.age/bug.lifespan))+1)
         # pygame.draw.circle(self.gameDisplay, bug.color, (bug.x, bug.y, bug.size, bug.size))
     def growFlowers(self):
@@ -99,10 +124,24 @@ class Game:
                     quit()
                 if event.key == pygame.K_r:
                     self.reset()
+                if event.key == pygame.K_g:
+                    self.displayGridToggle = not self.displayGridToggle
+                    if(not self.displayGridToggle):
+                        self.clearGridPass = True
+                if event.key == pygame.K_o:
+                    self.onlyLiving = not self.onlyLiving
+                if event.key == pygame.K_b:
+                    self.spawnBug = not self.spawnBug
+                if event.key == pygame.K_d:
+                    self.debug = not self.debug
+                    if(not self.debug):
+                        self.debugClear = True
             if event.type == pygame.QUIT:
                     pygame.quit()
                     quit()
 
+        if(self.onlyLiving):
+            self.gameDisplay.fill(self.background)
         self.displayFlowers()
         self.growFlowers()
         self.numFlowers()
@@ -111,10 +150,36 @@ class Game:
             self.actBugs()
             self.displayBugs()
             self.displayFlowers()
+            if(self.displayGridToggle):
+                self.displayGrid()
+            if(self.clearGridPass):
+                self.clearGrid()
             self.checkBugsCollide()
+        if(self.debug):
+            self.showDebug()
+        if(self.debugClear):
+            self.clearDebug()
 
         pygame.display.update()
         pygame.time.wait(self.gameTime)
+
+    def showDebug(self):
+        font = pygame.font.SysFont(None, 24)
+        string = 'Flowers: %d    Bugs: %d    FlowerResets: %d    BugResets: %d' %( len(self.flowers), len(self.bugs),self.FlowerResets,self.BugResets)
+        img = font.render(string, True, (255,255,255))
+        rectPos = font.size(string)
+        modPos = (rectPos[0]+20,rectPos[1]+20)        
+        pygame.draw.rect(self.gameDisplay, (0,0,0), ((20,20), modPos))
+        self.gameDisplay.blit(img,(20,20))
+
+    def clearDebug(self):
+        font = pygame.font.SysFont(None, 24)
+        string = 'Flowers: %d    Bugs: %d    FlowerResets: %d    BugResets: %d' %( len(self.flowers), len(self.bugs),self.FlowerResets,self.BugResets)
+        rectPos = font.size(string)
+        modPos = (rectPos[0]+20,rectPos[1]+20)        
+        pygame.draw.rect(self.gameDisplay, self.background, ((20,20), modPos))
+        self.debugClear = False
+
     def checkBugsCollide(self):
         for bug in self.bugs:
             self.checkBugOnFlower(bug)
@@ -150,13 +215,13 @@ class Game:
 class Bug(object):
     def __init__(self, game, parent = None):
         if parent is None:
-            self.x = int(game.game_width/5)*4
-            self.y = int(game.game_height/5)*4
+            self.x = int(game.game_width/5)*3
+            self.y = int(game.game_height/5)*3
             self.size = 26
             self.age = 0
             self.lifespan = 500
-            self.energy = 500
-            self.maxEnergy = 1000
+            self.energy = 250
+            self.maxEnergy = 500
             self.color = (0,0,0)
             self.targetFlower = None
             self.pX = self.x
@@ -168,7 +233,7 @@ class Bug(object):
             self.size = 26
             self.age = 0
             self.lifespan = parent.lifespan+random.randint(-1,1)
-            self.energy = 500
+            self.energy = parent.maxEnergy/2
             self.maxEnergy = parent.maxEnergy
             self.color = parent.color
             self.targetFlower = None
@@ -296,9 +361,12 @@ def run():
     game = Game()#800,800, False)
     while not game.quit:
         game.tick()
-        if(len(game.flowers)<1 or len(game.bugs)<1):
-                game.reset()
+        if(len(game.flowers)<1):
+                # game.reset()
                 game.addFlower(Flower(game))
+                game.FlowerResets+=1
+        if(len(game.bugs)<1 and game.spawnBug):
                 game.addBug(Bug(game))
+                game.BugResets+=1
 
 run()
