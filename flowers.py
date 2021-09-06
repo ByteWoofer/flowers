@@ -39,7 +39,7 @@ class Game:
         self.gameDisplay.fill(self.background)
         pygame.display.update()
         self.gameTime = 50
-        self.bugTicks = 5
+        self.bugTicks = 1
         self.quit = False
         self.flowers = []
         self.bugs = []
@@ -74,8 +74,12 @@ class Game:
            pygame.draw.circle(self.gameDisplay, flower.color, (flower.x, flower.y), flower.age+1, 1)
 
     def displayBug(self, bug):
-        pygame.draw.circle(self.gameDisplay, self.background, (bug.x, bug.y), bug.size+2, 0)        
-        pygame.draw.circle(self.gameDisplay, bug.color, (bug.x, bug.y), bug.size, 0)        
+        pygame.draw.circle(self.gameDisplay, self.background, (bug.pX, bug.pY), bug.pSize, 0)        
+        bug.pX = bug.x
+        bug.pY = bug.y
+        bug.pSize = bug.size
+        pygame.draw.circle(self.gameDisplay, bug.color, (bug.x, bug.y), bug.size, 0)
+        pygame.draw.circle(self.gameDisplay, (255,255,255), (bug.x, bug.y), (bug.size/2)+int(bug.size*(.5*bug.age/bug.lifespan)), int(bug.size*(bug.age/bug.lifespan))+1)
         # pygame.draw.circle(self.gameDisplay, bug.color, (bug.x, bug.y, bug.size, bug.size))
     def growFlowers(self):
         for flower in self.flowers:
@@ -106,6 +110,7 @@ class Game:
         for i in range(0,self.bugTicks):
             self.actBugs()
             self.displayBugs()
+            self.displayFlowers()
             self.checkBugsCollide()
 
         pygame.display.update()
@@ -119,10 +124,20 @@ class Game:
             if collider.y<=collidee.y and collider.y+collider.size>=collidee.y:
                 return True
         return False
+    def checkCollisionCircle(self, collider, collidee):
+            lenX = abs(collider.x-collidee.x)
+            lenY = abs(collider.y-collidee.y)
+            dist = math.sqrt(lenX*lenX+lenY*lenY)
+            if dist<collider.size:
+                return True
+            return False
 
     def checkBugOnFlower(self, bug):
         for flower in self.flowers:
-            if self.checkCollision(bug,flower):
+            # if self.checkCollision(bug,flower):
+            #     bug.ateFlower(self, flower)
+            #     flower.die(self)
+            if self.checkCollisionCircle(bug,flower):
                 bug.ateFlower(self, flower)
                 flower.die(self)
     def actBugs(self):
@@ -135,15 +150,18 @@ class Game:
 class Bug(object):
     def __init__(self, game, parent = None):
         if parent is None:
-            self.x = int(game.game_width/5)
-            self.y = int(game.game_height/5)
+            self.x = int(game.game_width/5)*4
+            self.y = int(game.game_height/5)*4
             self.size = 26
             self.age = 0
-            self.lifespan = 150
+            self.lifespan = 500
             self.energy = 500
             self.maxEnergy = 1000
             self.color = (0,0,0)
             self.targetFlower = None
+            self.pX = self.x
+            self.pY = self.y
+            self.pSize = self.size
         else:
             self.x = parent.x+10
             self.y = parent.y+10
@@ -154,13 +172,17 @@ class Bug(object):
             self.maxEnergy = parent.maxEnergy
             self.color = parent.color
             self.targetFlower = None
+            self.pX = self.x
+            self.pY = self.y
+            self.pSize = self.size
 
     def reproduce(self, game):
         game.bugs.append(Bug(game, self))
+
     def ateFlower(self, game, flower):
         self.targetFlower = None
         self.color = ((self.color[0]*3+flower.color[0])/4,(self.color[1]*3+flower.color[1])/4,(self.color[2]*3+flower.color[2])/4,)
-        self.energy+=flower.age+50
+        self.energy+=flower.age*2
         if(self.energy>self.maxEnergy):
             self.reproduce(game)
             self.energy=self.maxEnergy/2
@@ -182,12 +204,13 @@ class Bug(object):
         return nearestFlower
 
     def act(self, game):
+        self.age+=1
         self.size=int(self.energy/10)
         if self.targetFlower == None and len(game.flowers)>0 or not (self.targetFlower in game.flowers):
             self.targetFlower = self.findNearestFlower(game)
         if(self.targetFlower != None):
             self.moveTowardsFlower(game, self.targetFlower)
-        if(self.energy <= 0):
+        if(self.energy <= 0 or self.age>self.lifespan):
             self.die(game)
     
     def moveTowardsFlower(self, game, targetFlower):
