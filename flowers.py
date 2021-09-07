@@ -339,7 +339,7 @@ class Flower(object):
         and self.life_span > 0 and self.life_span < 31
         and self.spread_distance > 0 and self.spread_distance < 31
         and self.children >= 0 and self.children < 31
-        and self.years_to_maturity > 0)
+        and self.years_to_maturity > 1)
 
 
     def grow(self, game):
